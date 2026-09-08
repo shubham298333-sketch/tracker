@@ -1,0 +1,6 @@
+{
+  "name": "Period Tracker",
+  "description": "A private, offline-first period and ovulation tracker with cycle predictions, symptom logging, and insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
