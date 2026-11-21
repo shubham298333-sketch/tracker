@@ -77,6 +77,7 @@ fun DayDetailScreen(
     existingLog: DailyLog?,
     onSaveLog: (DailyLog) -> Unit,
     onDeleteLog: (String) -> Unit,
+    onShowInterstitial: (onDismissed: () -> Unit) -> Unit = { it() },
     onBack: () -> Unit
 ) {
     val date = remember(dateString) { LocalDateCompat.parseOrNull(dateString) ?: LocalDateCompat.now() }
@@ -498,8 +499,10 @@ fun DayDetailScreen(
                         sexualActivity = selectedSex,
                         notes = notesInput
                     )
-                    onSaveLog(log)
-                    onBack()
+                    onShowInterstitial {
+                        onSaveLog(log)
+                        onBack()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

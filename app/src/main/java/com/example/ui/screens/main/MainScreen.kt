@@ -1,6 +1,7 @@
 package com.example.ui.screens.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.example.ads.AdBanner
 import com.example.data.model.Cycle
 import com.example.data.model.DailyLog
 import com.example.data.model.UserSettings
@@ -44,47 +46,58 @@ fun MainScreen(
     userSettings: UserSettings?,
     allDailyLogs: List<DailyLog>,
     allCycles: List<Cycle>,
+    isDarkTheme: Boolean = false,
+    onToggleDayNight: () -> Unit = {},
     onOpenDayDetail: (String) -> Unit,
     onUpdateSettings: (UserSettings) -> Unit,
     onExportCsv: (onResult: (String) -> Unit) -> Unit,
     onClearAllData: () -> Unit,
-    onTestNotification: () -> Unit
+    onTestNotification: () -> Unit,
+    onShowInterstitialAd: (forceShow: Boolean, onDismissed: () -> Unit) -> Unit = { _, d -> d() },
+    onShowRewardedAd: (onRewardGranted: () -> Unit, onDismissed: () -> Unit) -> Unit = { r, d -> r(); d() },
+    onUnlockForecast: () -> Unit = {},
+    onUnlockInsights: () -> Unit = {},
+    onGrantAdFreePass: (Int) -> Unit = {}
 ) {
     var currentTab by remember { mutableStateOf(MainTab.HOME) }
+    val isAdFree = userSettings?.isAdFreeActive() == true
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                modifier = Modifier.testTag("main_bottom_nav")
-            ) {
-                val tabs = listOf(
-                    MainTab.HOME to (Icons.Filled.Home to Icons.Outlined.Home),
-                    MainTab.CALENDAR to (Icons.Filled.CalendarMonth to Icons.Outlined.CalendarMonth),
-                    MainTab.STATS to (Icons.Filled.Insights to Icons.Outlined.Insights),
-                    MainTab.SETTINGS to (Icons.Filled.Settings to Icons.Outlined.Settings)
-                )
-
-                tabs.forEach { (tab, icons) ->
-                    val isSelected = currentTab == tab
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { currentTab = tab },
-                        icon = {
-                            Icon(
-                                imageVector = if (isSelected) icons.first else icons.second,
-                                contentDescription = tab.label
-                            )
-                        },
-                        label = { Text(tab.label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
+            Column {
+                AdBanner(isAdFree = isAdFree)
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.testTag("main_bottom_nav")
+                ) {
+                    val tabs = listOf(
+                        MainTab.HOME to (Icons.Filled.Home to Icons.Outlined.Home),
+                        MainTab.CALENDAR to (Icons.Filled.CalendarMonth to Icons.Outlined.CalendarMonth),
+                        MainTab.STATS to (Icons.Filled.Insights to Icons.Outlined.Insights),
+                        MainTab.SETTINGS to (Icons.Filled.Settings to Icons.Outlined.Settings)
                     )
+
+                    tabs.forEach { (tab, icons) ->
+                        val isSelected = currentTab == tab
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = { currentTab = tab },
+                            icon = {
+                                Icon(
+                                    imageVector = if (isSelected) icons.first else icons.second,
+                                    contentDescription = tab.label
+                                )
+                            },
+                            label = { Text(tab.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
+                        )
+                    }
                 }
             }
         }
@@ -100,7 +113,9 @@ fun MainScreen(
                     todayLog = todayLog,
                     userSettings = userSettings,
                     allDailyLogs = allDailyLogs,
-                    onOpenDayDetail = onOpenDayDetail
+                    onOpenDayDetail = onOpenDayDetail,
+                    isDarkTheme = isDarkTheme,
+                    onToggleDayNight = onToggleDayNight
                 )
                 MainTab.CALENDAR -> CalendarScreen(
                     prediction = prediction,
@@ -110,14 +125,28 @@ fun MainScreen(
                 MainTab.STATS -> StatsScreen(
                     cycles = allCycles,
                     dailyLogs = allDailyLogs,
-                    prediction = prediction
+                    prediction = prediction,
+                    userSettings = userSettings,
+                    onWatchRewardedForForecast = {
+                        onShowRewardedAd(onUnlockForecast) {}
+                    },
+                    onWatchRewardedForInsights = {
+                        onShowRewardedAd(onUnlockInsights) {}
+                    }
                 )
                 MainTab.SETTINGS -> SettingsScreen(
                     userSettings = userSettings,
                     onUpdateSettings = onUpdateSettings,
                     onExportCsv = onExportCsv,
                     onClearAllData = onClearAllData,
-                    onTestNotification = onTestNotification
+                    onTestNotification = onTestNotification,
+                    onShowInterstitialAd = {
+                        onShowInterstitialAd(true) {}
+                    },
+                    onShowRewardedAd = { onGranted ->
+                        onShowRewardedAd(onGranted) {}
+                    },
+                    onGrantAdFreePass = onGrantAdFreePass
                 )
             }
         }

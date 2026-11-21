@@ -18,8 +18,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -27,7 +34,9 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import com.example.data.model.UserSettings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,7 +62,10 @@ import kotlin.math.roundToInt
 fun StatsScreen(
     cycles: List<Cycle>,
     dailyLogs: List<DailyLog>,
-    prediction: CyclePredictionResult?
+    prediction: CyclePredictionResult?,
+    userSettings: UserSettings? = null,
+    onWatchRewardedForForecast: () -> Unit = {},
+    onWatchRewardedForInsights: () -> Unit = {}
 ) {
     var cycleFilterLimit by remember { mutableIntStateOf(6) } // 3, 6, 12
 
@@ -350,6 +362,97 @@ fun StatsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Rewarded Feature 1: Hormonal Phase & Cycle Insights
+        val isInsightsUnlocked = userSettings?.unlockedSymptomInsights == true
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isInsightsUnlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)
+            ),
+            border = CardDefaults.outlinedCardBorder()
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (isInsightsUnlocked) Icons.Default.CheckCircle else Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Hormonal Phase & Cycle Insights",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    if (!isInsightsUnlocked) {
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = "Locked", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (isInsightsUnlocked) {
+                    Text(
+                        text = "Your cycle is driven by 4 distinct hormonal phases:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val phases = listOf(
+                        Triple("🩸 Menstrual Phase (Days 1–5)", "Estrogen & Progesterone low. Rest, gentle stretching, and hydration recommended.", MaterialTheme.colorScheme.primary),
+                        Triple("🌱 Follicular Phase (Days 6–13)", "Estrogen rises. High mental clarity, physical stamina, and creativity.", TealSecondary),
+                        Triple("✨ Ovulatory Phase (Days 14–16)", "LH surge triggers ovulation. Peak fertility window, heightened confidence.", ColorPeriodSolid),
+                        Triple("🍂 Luteal Phase (Days 17–28)", "Progesterone dominance. PMS symptoms may emerge. Prioritize restful sleep.", MaterialTheme.colorScheme.secondary)
+                    )
+
+                    phases.forEach { (phaseTitle, phaseDesc, color) ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(text = phaseTitle, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = color)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(text = phaseDesc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "Unlock deep medical insights into your 4 biological cycle phases (Menstrual, Follicular, Ovulatory, Luteal) and how your body and hormones fluctuate throughout each month.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = onWatchRewardedForInsights,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(imageVector = Icons.Default.PlayCircle, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Watch Video to Unlock Free")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         // History of Past Cycles
         Text(
             text = "Cycle History",
@@ -401,6 +504,119 @@ fun StatsScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Rewarded Feature 2: 6-Month Extended Future Forecast
+        val isForecastUnlocked = userSettings?.unlockedExtendedForecast == true
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isForecastUnlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            ),
+            border = CardDefaults.outlinedCardBorder()
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "6-Month Extended Forecast",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    if (!isForecastUnlocked) {
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = "Locked", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (isForecastUnlocked) {
+                    Text(
+                        text = "Projected cycle dates for the next 6 months to help you plan travel, events, and fertility:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val baseStart = prediction?.nextPeriodStart ?: LocalDateCompat.now().plusDays(14)
+                    val futureCycles = remember(baseStart, avgCycleLen, avgPeriodLen) {
+                        (0 until 6).map { idx ->
+                            val pStart = baseStart.plusDays(idx * avgCycleLen.toLong())
+                            val pEnd = pStart.plusDays((avgPeriodLen - 1).coerceAtLeast(1).toLong())
+                            val ov = pStart.plusDays((avgCycleLen - 14).toLong())
+                            Triple(pStart, pEnd, ov)
+                        }
+                    }
+
+                    futureCycles.forEachIndexed { idx, (pStart, pEnd, ov) ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Cycle ${idx + 1}: ${pStart.formatDisplay()} - ${pEnd.formatDisplay()}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "~$avgPeriodLen days",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Estimated Ovulation: ${ov.formatDisplay()} (Fertile: ${ov.minusDays(5).formatDisplay()} - ${ov.plusDays(1).formatDisplay()})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TealSecondary
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "Plan vacations, weddings, athletic events, and family planning up to half a year in advance with estimated start dates, fertile windows, and ovulation days.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = onWatchRewardedForForecast,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(imageVector = Icons.Default.PlayCircle, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Watch Video to Unlock Free")
                     }
                 }
             }

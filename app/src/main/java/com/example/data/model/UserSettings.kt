@@ -27,10 +27,18 @@ data class UserSettings(
 
     // Preferences & Lock
     val temperatureUnit: String = UNIT_CELSIUS,
-    val appTheme: String = THEME_SYSTEM,
+    val appTheme: String = THEME_LIGHT,
     val accentPalette: String = PALETTE_ROSE,
-    val appLockPin: String? = null
+    val appLockPin: String? = null,
+
+    // Monetization & Ad Preferences
+    val adFreeUntilTimestamp: Long = 0L,
+    val unlockedExtendedForecast: Boolean = false,
+    val unlockedSymptomInsights: Boolean = false
 ) {
+    fun isAdFreeActive(): Boolean {
+        return adFreeUntilTimestamp > System.currentTimeMillis()
+    }
     companion object {
         const val GOAL_TRACK = "track_cycle"
         const val GOAL_AVOID = "avoid_pregnancy"
@@ -46,5 +54,6 @@ data class UserSettings(
         const val PALETTE_ROSE = "rose"
         const val PALETTE_LAVENDER = "lavender"
         const val PALETTE_SAGE = "sage"
+        const val PALETTE_OCEAN = "ocean"
     }
 }

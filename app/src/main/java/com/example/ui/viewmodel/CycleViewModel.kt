@@ -93,7 +93,9 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
         avgPeriodLength: Int,
         goal: String,
         birthYear: Int?,
-        onBirthControl: Boolean
+        onBirthControl: Boolean,
+        appTheme: String = UserSettings.THEME_LIGHT,
+        accentPalette: String = UserSettings.PALETTE_ROSE
     ) {
         viewModelScope.launch {
             val initialSettings = UserSettings(
@@ -103,7 +105,9 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
                 avgPeriodLength = avgPeriodLength,
                 goal = goal,
                 birthYear = birthYear,
-                onBirthControl = onBirthControl
+                onBirthControl = onBirthControl,
+                appTheme = appTheme,
+                accentPalette = accentPalette
             )
             repository.saveSettings(initialSettings)
 
@@ -129,6 +133,14 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
 
             // Schedule background notifications
             NotificationHelper.scheduleAllAlarms(getApplication())
+        }
+    }
+
+    fun toggleDayNightTheme(currentlyDark: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getSettingsSync()
+            val nextTheme = if (currentlyDark) UserSettings.THEME_LIGHT else UserSettings.THEME_DARK
+            repository.saveSettings(current.copy(appTheme = nextTheme))
         }
     }
 
@@ -176,6 +188,28 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
     fun clearAllData() {
         viewModelScope.launch {
             repository.clearAllData()
+        }
+    }
+
+    fun grantAdFreePass(hours: Int = 24) {
+        viewModelScope.launch {
+            val current = repository.getSettingsSync()
+            val newTimestamp = System.currentTimeMillis() + (hours * 3600 * 1000L)
+            repository.saveSettings(current.copy(adFreeUntilTimestamp = newTimestamp))
+        }
+    }
+
+    fun unlockExtendedForecast() {
+        viewModelScope.launch {
+            val current = repository.getSettingsSync()
+            repository.saveSettings(current.copy(unlockedExtendedForecast = true))
+        }
+    }
+
+    fun unlockSymptomInsights() {
+        viewModelScope.launch {
+            val current = repository.getSettingsSync()
+            repository.saveSettings(current.copy(unlockedSymptomInsights = true))
         }
     }
 
